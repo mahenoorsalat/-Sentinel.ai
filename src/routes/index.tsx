@@ -311,7 +311,7 @@ function Index() {
                 { icon: Sparkles, name: "Remediator", desc: "Synthesizes code patches and config fixes you can ship.", color: "var(--lilac)" },
               ].map((a) => (
                 <div key={a.name} className="group rounded-2xl border border-border bg-card p-5 shadow-soft transition-all hover:-translate-y-1 hover:shadow-card">
-                  <div className="grid size-10 place-items-center rounded-xl" style={{ background: `var(--lilac)` , backgroundColor: `oklch(from ${a.color} l c h)` }}>
+                  <div className="grid size-10 place-items-center rounded-xl" style={{ backgroundColor: a.color }}>
                     <a.icon className="size-5 text-foreground" />
                   </div>
                   <div className="mt-4 font-display text-lg font-bold tracking-tight">{a.name}</div>
