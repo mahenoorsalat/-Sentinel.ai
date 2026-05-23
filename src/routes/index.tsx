@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
@@ -54,10 +54,10 @@ function Index() {
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <button className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:block">Sign in</button>
-            <button className="inline-flex items-center gap-1.5 rounded-full bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-[var(--ink-foreground)] shadow-soft transition-transform hover:scale-[1.02]">
+            <Link to="/console" className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:block">Sign in</Link>
+            <Link to="/console" className="inline-flex items-center gap-1.5 rounded-full bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-[var(--ink-foreground)] shadow-soft transition-transform hover:scale-[1.02]">
               Launch console <ArrowUpRight className="size-3.5" />
-            </button>
+            </Link>
           </div>
         </div>
       </header>
@@ -86,12 +86,12 @@ function Index() {
               Sentinel deploys a swarm of AI agents that audit your stack, detect vulnerabilities, and ship remediation in real time — without a SOC team.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <button className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_oklch(0.52_0.22_280/0.5)] transition-transform hover:scale-[1.02]">
+              <Link to="/console" className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_oklch(0.52_0.22_280/0.5)] transition-transform hover:scale-[1.02]">
                 <Sparkles className="size-4" /> Start a deep scan
-              </button>
-              <button className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground shadow-soft transition-colors hover:bg-secondary">
-                <Play className="size-3.5 fill-current" /> Watch 90s demo
-              </button>
+              </Link>
+              <Link to="/console" className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground shadow-soft transition-colors hover:bg-secondary">
+                <Play className="size-3.5 fill-current animate-pulse" /> Launch Live Demo
+              </Link>
             </div>
             <div className="mt-6 flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               <Lock className="size-3" /> SOC 2 · ISO 27001 · GDPR · HIPAA
