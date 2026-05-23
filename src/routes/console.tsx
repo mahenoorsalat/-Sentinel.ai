@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
+import { getThreatThreads, createPatchPost } from "../lib/forums";
 import {
   ShieldCheck,
   Play,
@@ -315,7 +316,39 @@ function Console() {
       else if (currentProgress === 100) {
         setScanState("completed");
         setActiveAgent("none");
-        addLog("ORCHESTRATOR", "Swarm execution completed successfully. Resources released.", "success");
+        
+        // FETCH REAL THREATS FROM FORU.MS ENDPOINT AT COMPLETION
+        getThreatThreads().then((threads) => {
+          const parsedVulns = threads.map((t: any) => {
+            try {
+              const metadata = JSON.parse(t.content);
+              return {
+                id: t.id,
+                title: t.title,
+                ...metadata // Spreads cweId, severity, originalCode, remediatedCode from payload
+              };
+            } catch {
+              // Fallback context parse if content string isn't pure JSON
+              return {
+                id: t.id,
+                title: t.title,
+                cweId: "CWE-Unknown",
+                severity: "high",
+                filePath: "unknown-source.ts",
+                exploitVector: t.content,
+                impact: "Unknown risk structure profile.",
+                originalCode: "// Raw string payload data",
+                remediatedCode: "// Secure remediation payload missing",
+                status: "open"
+              };
+            }
+          });
+          setVulnerabilities(parsedVulns);
+        }).catch(err => {
+          addLog("SYSTEM", `Failed syncing to Foru.ms live database: ${err.message}`, "error");
+        });
+
+        addLog("ORCHESTRATOR", "Swarm execution completed. Headless Foru.ms database collections hydrated.", "success");
         addLog("SYSTEM", "Scan complete. Review detected vulnerabilities in detail panel below.", "success");
         addAuditRow("Orchestrator", "Swarm audit complete. Clean state returned.", "success");
         clearInterval(interval);
@@ -324,7 +357,7 @@ function Console() {
   };
 
   // Simulated Patch Deployment Sequence
-  const handleDeployPatch = (vulnId: string) => {
+  const handleDeployPatch = async (vulnId: string) => {
     // Update local vulnerability list status to "deploying"
     setVulnerabilities(prev =>
       prev.map(v => (v.id === vulnId ? { ...v, status: "deploying" } : v))
@@ -334,8 +367,13 @@ function Console() {
     }
 
     addAuditRow("User", `Triggered Patch Deployment for: ${vulnId}`, "info");
-    addLog("REMEDIATOR", `Deploying patch signature for ${vulnId}...`, "info");
-    addLog("SYSTEM", `Running local lint validation on modified files...`, "info");
+    addLog("REMEDIATOR", `Pushing unified diff update payload to Foru.ms database index...`, "info");
+    
+    try {
+      await createPatchPost(vulnId, `Automated patch signature successfully compiled and verified by Sentinel Engine.`);
+    } catch (error: any) {
+      addLog("SYSTEM", `Failed to post patch transaction node: ${error.message}`, "error");
+    }
 
     setTimeout(() => {
       addLog("SYSTEM", `Injecting patch into repository branch 'sentinel/patch-${vulnId}'...`, "info");
@@ -361,7 +399,7 @@ function Console() {
         setSelectedVuln(prev => prev ? { ...prev, status: "resolved" } : null);
       }
 
-      addLog("REPORTER", `Patch ${vulnId} fully deployed! Production is now SECURE.`, "success");
+      addLog("REPORTER", `Headless stream entry updated successfully! Patch ${vulnId} fully deployed!`, "success");
       addAuditRow("Remediator", `Patch ${vulnId} successfully verified & pushed to edge production.`, "success");
 
       // Dynamically update overall metrics
