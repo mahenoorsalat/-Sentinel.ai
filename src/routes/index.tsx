@@ -54,7 +54,6 @@ function Index() {
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/console" className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:block">Sign in</Link>
             <Link to="/console" className="inline-flex items-center gap-1.5 rounded-full bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-[var(--ink-foreground)] shadow-soft transition-transform hover:scale-[1.02]">
               Launch console <ArrowUpRight className="size-3.5" />
             </Link>
