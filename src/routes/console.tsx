@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
-import { getThreatThreads, createPatchPost } from "../lib/forums";
+import { getThreatThreads, createThreatThread, createPatchPost } from "../lib/forums";
 import {
   ShieldCheck,
   Play,
@@ -317,40 +317,47 @@ function Console() {
         setScanState("completed");
         setActiveAgent("none");
         
-        // FETCH REAL THREATS FROM FORU.MS ENDPOINT AT COMPLETION
-        getThreatThreads().then((threads) => {
-          const parsedVulns = threads.map((t: any) => {
-            try {
-              const metadata = JSON.parse(t.content);
-              return {
-                id: t.id,
-                title: t.title,
-                ...metadata // Spreads cweId, severity, originalCode, remediatedCode from payload
-              };
-            } catch {
-              // Fallback context parse if content string isn't pure JSON
-              return {
-                id: t.id,
-                title: t.title,
-                cweId: "CWE-Unknown",
-                severity: "high",
-                filePath: "unknown-source.ts",
-                exploitVector: t.content,
-                impact: "Unknown risk structure profile.",
-                originalCode: "// Raw string payload data",
-                remediatedCode: "// Secure remediation payload missing",
-                status: "open"
-              };
-            }
-          });
-          setVulnerabilities(parsedVulns);
-        }).catch(err => {
-          addLog("SYSTEM", `Failed syncing to Foru.ms live database: ${err.message}`, "error");
-        });
+        addLog("ORCHESTRATOR", "Synchronizing dynamic data frames with headless Foru.ms cluster...", "info");
 
-        addLog("ORCHESTRATOR", "Swarm execution completed. Headless Foru.ms database collections hydrated.", "success");
-        addLog("SYSTEM", "Scan complete. Review detected vulnerabilities in detail panel below.", "success");
-        addAuditRow("Orchestrator", "Swarm audit complete. Clean state returned.", "success");
+        // 🚀 LIVE INTEGRATION: Hydrate your UI grid from your actual Foru.ms Database!
+        getThreatThreads()
+          .then((threads) => {
+            const liveVulnerabilities = threads.map((t: any) => {
+              try {
+                // Parse the stringified JSON metadata fields you stored inside the thread content
+                const metadata = JSON.parse(t.content);
+                return {
+                  id: t.id,
+                  title: t.title,
+                  ...metadata
+                };
+              } catch {
+                // Fallback rendering structure if text isn't JSON formatted
+                return {
+                  id: t.id,
+                  title: t.title,
+                  cweId: "CWE-Unknown Vector",
+                  severity: "high" as const,
+                  filePath: "src/unknown-source.ts",
+                  exploitVector: t.content,
+                  impact: "Unclassified posture risk.",
+                  originalCode: "// Raw string telemetry payload block",
+                  remediatedCode: "// Remediated fix patch signature unavailable",
+                  status: "open" as const
+                };
+              }
+            });
+
+            setVulnerabilities(liveVulnerabilities);
+            setMetrics(prev => ({ ...prev, threatsFound: liveVulnerabilities.filter((v: any) => v.status !== "resolved").length }));
+            addLog("ORCHESTRATOR", `Swarm synchronization complete. ${liveVulnerabilities.length} active threads mapped.`, "success");
+            addAuditRow("Orchestrator", "Successfully populated live catalog states from headless instance.", "success");
+          })
+          .catch((err) => {
+            addLog("SYSTEM", `Data synchronization failed: ${err.message}`, "error");
+            addAuditRow("System", "Failed syncing with remote server endpoints.", "error");
+          });
+
         clearInterval(interval);
       }
     }, 120);
@@ -358,7 +365,6 @@ function Console() {
 
   // Simulated Patch Deployment Sequence
   const handleDeployPatch = async (vulnId: string) => {
-    // Update local vulnerability list status to "deploying"
     setVulnerabilities(prev =>
       prev.map(v => (v.id === vulnId ? { ...v, status: "deploying" } : v))
     );
@@ -366,64 +372,41 @@ function Console() {
       setSelectedVuln(prev => prev ? { ...prev, status: "deploying" } : null);
     }
 
-    addAuditRow("User", `Triggered Patch Deployment for: ${vulnId}`, "info");
-    addLog("REMEDIATOR", `Pushing unified diff update payload to Foru.ms database index...`, "info");
-    
+    addAuditRow("User", `Triggered Patch Deployment for Node ID: ${vulnId}`, "info");
+    addLog("REMEDIATOR", `Deploying patch signature for database stream row ${vulnId}...`, "info");
+
     try {
-      await createPatchPost(vulnId, `Automated patch signature successfully compiled and verified by Sentinel Engine.`);
-    } catch (error: any) {
-      addLog("SYSTEM", `Failed to post patch transaction node: ${error.message}`, "error");
-    }
-
-    setTimeout(() => {
-      addLog("SYSTEM", `Injecting patch into repository branch 'sentinel/patch-${vulnId}'...`, "info");
-      addAuditRow("Remediator", `Injected patch branch 'sentinel/patch-${vulnId}' into remote repository.`, "info");
-    }, 1000);
-
-    setTimeout(() => {
-      addLog("SYSTEM", `Running integration unit tests (4 suites, 36 test specs)...`, "info");
-      addLog("SYSTEM", `✔ Unit tests passed. Zero regressions discovered.`, "success");
-    }, 2000);
-
-    setTimeout(() => {
-      addLog("SYSTEM", `Triggering production edge deployment to Vercel/Cloudflare...`, "info");
-    }, 3200);
-
-    setTimeout(() => {
-      // Completed patching
-      setVulnerabilities(prev =>
-        prev.map(v => (v.id === vulnId ? { ...v, status: "resolved" } : v))
-      );
+      // 🚀 LIVE INTEGRATION: Stream the confirmation node directly to the thread discussion stream
+      await createPatchPost(vulnId, `Automated patch verified and committed locally by Sentinel Swarm Compiler engine.`);
       
-      if (selectedVuln && selectedVuln.id === vulnId) {
-        setSelectedVuln(prev => prev ? { ...prev, status: "resolved" } : null);
-      }
+      // Maintain your pristine UI simulation pacing for immediate interactive feedback
+      setTimeout(() => {
+        addLog("SYSTEM", `Injecting patch into repository branch 'sentinel/patch-${vulnId}'...`, "info");
+      }, 1000);
 
-      addLog("REPORTER", `Headless stream entry updated successfully! Patch ${vulnId} fully deployed!`, "success");
-      addAuditRow("Remediator", `Patch ${vulnId} successfully verified & pushed to edge production.`, "success");
-
-      // Dynamically update overall metrics
-      setMetrics(prev => ({
-        ...prev,
-        threatsFound: Math.max(0, prev.threatsFound - 1)
-      }));
-
-      // Drop risk score and boost compliance percentages based on which vuln is fixed!
-      setRiskScore(prev => Math.max(0.04, prev - 0.21));
-
-      setCompliance(prev => {
-        let update = { ...prev };
-        if (vulnId === "VULN-001") {
-          update = { soc2: Math.min(100, prev.soc2 + 12), iso27001: Math.min(100, prev.iso27001 + 16), gdpr: Math.min(100, prev.gdpr + 8) };
-        } else if (vulnId === "VULN-002") {
-          update = { soc2: Math.min(100, prev.soc2 + 8), iso27001: Math.min(100, prev.iso27001 + 10), gdpr: Math.min(100, prev.gdpr + 12) };
-        } else {
-          update = { soc2: Math.min(100, prev.soc2 + 6), iso27001: Math.min(100, prev.iso27001 + 8), gdpr: Math.min(100, prev.gdpr + 5) };
+      setTimeout(() => {
+        addLog("SYSTEM", `✔ Unit tests passed. Zero regressions discovered. Production pushed to edge edge-network.`, "success");
+        
+        setVulnerabilities(prev =>
+          prev.map(v => (v.id === vulnId ? { ...v, status: "resolved" } : v))
+        );
+        
+        if (selectedVuln && selectedVuln.id === vulnId) {
+          setSelectedVuln(prev => prev ? { ...prev, status: "resolved" } : null);
         }
-        addAuditRow("Reporter", `Recalculated compliance posture: SOC 2 updated to ${update.soc2}%.`, "success");
-        return update;
-      });
-    }, 4500);
+
+        setMetrics(prev => ({ ...prev, threatsFound: Math.max(0, prev.threatsFound - 1) }));
+        setRiskScore(prev => Math.max(0.04, prev - 0.21));
+        addLog("REPORTER", `Patch ${vulnId} successfully recorded and active.`, "success");
+        addAuditRow("Remediator", `Patch deployment recorded securely inside Foru.ms Post cluster indexes.`, "success");
+      }, 3000);
+
+    } catch (error: any) {
+      addLog("SYSTEM", `Failed streaming patch record to Foru.ms database: ${error.message}`, "error");
+      setVulnerabilities(prev =>
+        prev.map(v => (v.id === vulnId ? { ...v, status: "open" } : v))
+      );
+    }
   };
 
   // REAL GEMINI API CALL METHOD (FOR SANDBOX CODE SCANNING)
